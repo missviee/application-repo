@@ -5,15 +5,21 @@ pipeline {
         ECR_REGISTRY = "992382545251.dkr.ecr.us-east-1.amazonaws.com"
         APP_NAME     = "calc-app"
         PROD_HOST    = "ubuntu@54.144.113.195"
-        IMAGE_TAG    = "${GIT_COMMIT}"
+        IMAGE_TAG    = "${env.BUILD_NUMBER}"
     }
 
     stages {
-        stage('Build & Test') {
-            agent { docker { image 'python:3.11' } }
+        stage('Build') {
+            agent { label 'docker' }
             steps {
-                sh 'pip install -r requirements.txt'
-                sh 'pytest --junitxml=tests/test-results/results.xml'
+                sh 'docker build -t ${APP_NAME}:${IMAGE_TAG} .'
+            }
+        }
+
+        stage('Test') {
+            agent { label 'docker' }
+            steps {
+                sh 'pytest --junitxml=tests/test-results/result.xml'
             }
             post {
                 always {
@@ -33,7 +39,6 @@ pipeline {
 
         stage('Push Image to ECR') {
             steps {
-                sh "docker build -t ${ECR_REGISTRY}/${APP_NAME}:${IMAGE_TAG} ."
                 sh "docker push ${ECR_REGISTRY}/${APP_NAME}:${IMAGE_TAG}"
             }
         }
