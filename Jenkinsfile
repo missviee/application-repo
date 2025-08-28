@@ -96,7 +96,10 @@ pipeline {
                             '''
                         }
                         retry(5) {
-                            sh "curl --fail http://${PROD_HOST#*@}/health || exit 1"
+                            sh '''
+                                HOST=${PROD_HOST#*@}
+                                curl --fail http://$HOST/health || exit 1
+                            '''
                             sleep 10
                         }
                     }
